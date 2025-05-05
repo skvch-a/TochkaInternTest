@@ -31,11 +31,11 @@ class Program
         pq.Enqueue(startState, 0);
 
         while (pq.Count > 0)
-        { 
+        {
             pq.TryDequeue(out var curState, out var curDist);
             if (minDistDict[curState] < curDist)
                 continue;
-            
+
             UnpackState(curState, curPos, out var curMask);
             if (curMask == allKeysMask)
                 return curDist;
@@ -47,11 +47,11 @@ class Program
                     var keyBit = 1 << (v - 4);
                     if ((curMask & reqMask) != reqMask || (curMask & keyBit) != 0)
                         continue;
-                    
+
                     var newDist = curDist + dist;
                     var newPos = curPos.ToArray();
                     newPos[i] = v;
-                    
+
                     var newState = PackState(newPos, curMask | keyBit);
                     if (minDistDict.TryGetValue(newState, out var oldDist) && newDist >= oldDist)
                         continue;
@@ -93,9 +93,10 @@ class Program
         var rowsCount = grid.Count;
         var columnsCount = grid[0].Count;
         var edges = new List<(int v, int reqMask, int dist)>();
-        var visited = new bool[rowsCount, columnsCount];
+        var visited = new HashSet<(int row, int col, int mask)>();
         var queue = new Queue<(int row, int col, int mask, int dist)>();
-        visited[startRow, startCol] = true;
+        
+        visited.Add((startRow, startCol, 0));
         queue.Enqueue((startRow, startCol, 0, 0));
 
         while (queue.Count > 0)
@@ -106,8 +107,7 @@ class Program
                 var newRow = row + "2101"[direction] - '1';
                 var newCol = col + "1210"[direction] - '1';
 
-                if (newRow < 0 || newRow >= rowsCount || newCol < 0 || newCol >= columnsCount ||
-                    visited[newRow, newCol])
+                if (newRow < 0 || newRow >= rowsCount || newCol < 0 || newCol >= columnsCount)
                     continue;
 
                 var ch = grid[newRow][newCol];
@@ -117,8 +117,10 @@ class Program
                 var newMask = mask;
                 if (ch is >= 'A' and <= 'Z')
                     newMask |= 1 << Array.IndexOf(doors_char, ch);
+                
+                if (!visited.Add((newRow, newCol, newMask)))
+                    continue;
 
-                visited[newRow, newCol] = true;
                 if (ch is >= 'a' and <= 'z')
                     edges.Add((keyIndex[ch] + 4, newMask, dist + 1));
 
